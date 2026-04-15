@@ -1,15 +1,12 @@
 name: Build MirageSyno SPK
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,8 +18,18 @@ jobs:
         with:
           go-version: '1.21'
 
+      - name: Fetch build_dist.sh from tailscale/tailscale
+        run: |
+          # 从 Tailscale 官方仓库获取最新的 build_dist.sh 脚本
+          curl -o build_dist.sh https://raw.githubusercontent.com/tailscale/tailscale/main/build_dist.sh
+          chmod +x build_dist.sh
+
       - name: Build SPK
-        run: go run build.go --dsm-version=7 --goarch=amd64
+        run: |
+          # 设置必要的环境变量
+          export GO111MODULE=on
+          # 执行编译，目标为 DSM 7 的 amd64 架构
+          go run build.go --dsm-version=7 --goarch=amd64
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
