@@ -9,30 +9,41 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          submodules: 'recursive'
+          submodules: recursive
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.21'
 
-      - name: Fetch build_dist.sh from tailscale/tailscale
+      - name: Prepare environment
         run: |
-          # 从 Tailscale 官方仓库获取最新的 build_dist.sh 脚本
-          curl -o build_dist.sh https://raw.githubusercontent.com/tailscale/tailscale/main/build_dist.sh
+          mkdir -p spks
+          chmod -R +x .
+
+      - name: Fetch build_dist.sh from tailscale
+        run: |
+          curl -L -o build_dist.sh https://raw.githubusercontent.com/tailscale/tailscale/main/build_dist.sh
           chmod +x build_dist.sh
 
       - name: Build SPK
         run: |
-          # 设置必要的环境变量
+          set -e
           export GO111MODULE=on
-          # 执行编译，目标为 DSM 7 的 amd64 架构
           go run build.go --dsm-version=7 --goarch=amd64
+
+      - name: Debug output
+        if: always()
+        run: |
+          echo "==== root ===="
+          ls -lah
+          echo "==== spks ===="
+          ls -lah spks || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mirage-syno-spk
-          path: release/*.spk
+          path: spks/*.spk
